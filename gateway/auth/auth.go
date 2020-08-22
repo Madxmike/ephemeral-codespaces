@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -28,8 +27,8 @@ type certs struct {
 	Second string `json:"49e88c53761996a73623f191d512d2b47df802a1"`
 }
 
-func (a *Authenticator) RetrievePublicKeys(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, "GET", firebasePubKeyEndpoint, nil)
+func (a *Authenticator) RetrievePublicKeys() error {
+	req, err := http.NewRequest("GET", firebasePubKeyEndpoint, nil)
 	if err != nil {
 		return errors.Wrap(err, "could not create public keys request")
 	}
