@@ -3,6 +3,7 @@ package auth
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -68,7 +69,6 @@ var expiredClaim = &jwt.Claims{
 }
 
 func generateJWT(claim *jwt.Claims, privateKey *rsa.PrivateKey, t *testing.T) string {
-
 	key := jose.SigningKey{Algorithm: jose.RS256, Key: privateKey}
 	var options = jose.SignerOptions{}
 	options.WithType("JWT")
@@ -98,28 +98,35 @@ func TestAuthenticator_Validate(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		input string
-		want  bool
+		input       string
+		want        bool
+		expectedErr error
 	}{
-		"empty input":          {input: "", want: false},
-		"valid token":          {input: generateJWT(validClaim, privateKey, t), want: true},
-		"wrong issuer token":   {input: generateJWT(wrongIssuerClaim, privateKey, t), want: false},
-		"wrong subject token":  {input: generateJWT(wrongSubjectClaim, privateKey, t), want: false},
-		"wrong audience token": {input: generateJWT(wrongAudienceClaim, privateKey, t), want: false},
-		"future issued token":  {input: generateJWT(futureIssuedClaim, privateKey, t), want: false},
-		"expired token":        {input: generateJWT(expiredClaim, privateKey, t), want: false},
+		"valid token":          {input: generateJWT(validClaim, privateKey, t), want: true, expectedErr: nil},
+		"wrong issuer token":   {input: generateJWT(wrongIssuerClaim, privateKey, t), want: false, expectedErr: jwt.ErrInvalidIssuer},
+		"wrong subject token":  {input: generateJWT(wrongSubjectClaim, privateKey, t), want: false, expectedErr: jwt.ErrInvalidSubject},
+		"wrong audience token": {input: generateJWT(wrongAudienceClaim, privateKey, t), want: false, expectedErr: jwt.ErrInvalidAudience},
+		"future issued token":  {input: generateJWT(futureIssuedClaim, privateKey, t), want: false, expectedErr: jwt.ErrIssuedInTheFuture},
+		"expired token":        {input: generateJWT(expiredClaim, privateKey, t), want: false, expectedErr: jwt.ErrExpired},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := authenticator.Validate(tc.input)
+			claims, err := authenticator.Parse(tc.input)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
+
+			got, err := authenticator.Validate(claims)
 			if got != tc.want {
 				t.Fatalf("wanted: %t, got: %t", tc.want, got)
 			}
 
+			if tc.expectedErr != nil && !errors.As(err, &tc.expectedErr) {
+				t.Fatalf("expectedErr: %s, err: %s", tc.expectedErr, err)
+			} else if tc.expectedErr == nil && err != nil {
+				t.Fatalf("expectedErr: nil, err: %s", err)
+			}
 		})
 	}
 }

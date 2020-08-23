@@ -67,18 +67,18 @@ func (a *Authenticator) parseCerts(data []byte) error {
 	return nil
 }
 
-func (a *Authenticator) Validate(token string) (bool, error) {
+func (a *Authenticator) Parse(token string) (*jwt.Claims, error) {
 	if a.publicKeys == nil {
-		return false, errors.New("no public keys are available")
+		return nil, errors.New("no public keys are available")
 	}
 
 	if token == "" {
-		return false, nil
+		return nil, errors.New("token is empty")
 	}
 
 	parsed, err := jwt.ParseSigned(token)
 	if err != nil {
-		return false, errors.Wrap(err, "could not parse JWT")
+		return nil, errors.Wrap(err, "could not parse JWT")
 	}
 	claims := new(jwt.Claims)
 	for _, key := range a.publicKeys {
@@ -91,9 +91,13 @@ func (a *Authenticator) Validate(token string) (bool, error) {
 	}
 
 	if claims == nil {
-		return false, errors.New("no claim was able to be parsed")
+		return nil, errors.New("no claim was able to be parsed")
 	}
 
+	return claims, err
+}
+
+func (a *Authenticator) Validate(claims *jwt.Claims) (bool, error) {
 	expected := jwt.Expected{
 		Issuer:  fmt.Sprintf(secureTokenEndpoint, a.ProjectID),
 		Subject: a.ProjectID,
@@ -103,9 +107,9 @@ func (a *Authenticator) Validate(token string) (bool, error) {
 		Time: time.Now(),
 	}
 
-	err = claims.Validate(expected)
+	err := claims.Validate(expected)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 
 	return true, nil
