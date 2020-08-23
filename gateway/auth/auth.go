@@ -1,8 +1,11 @@
 package auth
 
 import (
-	"encoding/json"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -19,12 +22,7 @@ type Authenticator struct {
 	// The project id corresponding to the Firebase auth project
 	ProjectID string
 
-	publicKeys certs
-}
-
-type certs struct {
-	First  string `json:"12809dd239d24bd379c0ad191f8b0edcdb9d3914"`
-	Second string `json:"49e88c53761996a73623f191d512d2b47df802a1"`
+	publicKeys []*rsa.PublicKey
 }
 
 func (a *Authenticator) RetrievePublicKeys() error {
@@ -40,35 +38,74 @@ func (a *Authenticator) RetrievePublicKeys() error {
 
 	defer resp.Body.Close()
 
-	err = json.NewDecoder(resp.Body).Decode(&a.publicKeys)
+	certData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, "could not parse public keys")
+		return errors.Wrap(err, "could not read cert data body")
+	}
+
+	err = a.parseCerts(certData)
+	if err != nil {
+		return errors.Wrap(err, "could not parse certs")
 	}
 
 	return nil
 }
 
+func (a *Authenticator) parseCerts(data []byte) error {
+	a.publicKeys = make([]*rsa.PublicKey, 0)
+	var block *pem.Block
+	for len(data) != 0 {
+		block, data = pem.Decode(data)
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return err
+		}
+		publicKey := cert.PublicKey.(*rsa.PublicKey)
+
+		a.publicKeys = append(a.publicKeys, publicKey)
+	}
+	return nil
+}
+
 func (a *Authenticator) Validate(token string) (bool, error) {
+	if a.publicKeys == nil {
+		return false, errors.New("no public keys are available")
+	}
+
+	if token == "" {
+		return false, nil
+	}
+
 	parsed, err := jwt.ParseSigned(token)
 	if err != nil {
 		return false, errors.Wrap(err, "could not parse JWT")
 	}
-	var claims jwt.Claims
-	err = parsed.Claims(a.publicKeys, &claims)
-	if err != nil {
-		return false, errors.Wrap(err, "could not parse JWT claims")
+	claims := new(jwt.Claims)
+	for _, key := range a.publicKeys {
+		// We dont care too much about the error here.
+		// We only care that a claim gets parsed or not
+		_ = parsed.Claims(key, claims)
+		if claims != nil {
+			break
+		}
+	}
+
+	if claims == nil {
+		return false, errors.New("no claim was able to be parsed")
 	}
 
 	expected := jwt.Expected{
-		Issuer: fmt.Sprintf(secureTokenEndpoint, a.ProjectID),
+		Issuer:  fmt.Sprintf(secureTokenEndpoint, a.ProjectID),
+		Subject: a.ProjectID,
 		Audience: jwt.Audience{
 			a.ProjectID,
 		},
 		Time: time.Now(),
 	}
+
 	err = claims.Validate(expected)
 	if err != nil {
-		return false, errors.Wrap(err, "token is not valid")
+		return false, nil
 	}
 
 	return true, nil
