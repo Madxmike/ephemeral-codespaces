@@ -3,13 +3,13 @@ package auth
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/square/go-jose/jwt"
+	"github.com/pkg/errors"
 	"gopkg.in/square/go-jose.v2"
+	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 const projectID = "test_project"
@@ -117,7 +117,7 @@ func TestAuthenticator_Validate(t *testing.T) {
 			}
 
 			got := authenticator.Validate(claims)
-			if tc.want != nil && !errors.As(got, &tc.want) {
+			if tc.want != nil && !errors.Is(got, tc.want) {
 				t.Fatalf("wanted: %s, got: %s", tc.want, err)
 			} else if tc.want == nil && got != nil {
 				t.Fatalf("wanted: nil, got: %s", err)
