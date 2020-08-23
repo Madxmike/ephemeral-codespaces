@@ -98,16 +98,15 @@ func TestAuthenticator_Validate(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		input       string
-		want        bool
-		expectedErr error
+		input string
+		want  error
 	}{
-		"valid token":          {input: generateJWT(validClaim, privateKey, t), want: true, expectedErr: nil},
-		"wrong issuer token":   {input: generateJWT(wrongIssuerClaim, privateKey, t), want: false, expectedErr: jwt.ErrInvalidIssuer},
-		"wrong subject token":  {input: generateJWT(wrongSubjectClaim, privateKey, t), want: false, expectedErr: jwt.ErrInvalidSubject},
-		"wrong audience token": {input: generateJWT(wrongAudienceClaim, privateKey, t), want: false, expectedErr: jwt.ErrInvalidAudience},
-		"future issued token":  {input: generateJWT(futureIssuedClaim, privateKey, t), want: false, expectedErr: jwt.ErrIssuedInTheFuture},
-		"expired token":        {input: generateJWT(expiredClaim, privateKey, t), want: false, expectedErr: jwt.ErrExpired},
+		"valid token":          {input: generateJWT(validClaim, privateKey, t), want: nil},
+		"wrong issuer token":   {input: generateJWT(wrongIssuerClaim, privateKey, t), want: jwt.ErrInvalidIssuer},
+		"wrong subject token":  {input: generateJWT(wrongSubjectClaim, privateKey, t), want: jwt.ErrInvalidSubject},
+		"wrong audience token": {input: generateJWT(wrongAudienceClaim, privateKey, t), want: jwt.ErrInvalidAudience},
+		"future issued token":  {input: generateJWT(futureIssuedClaim, privateKey, t), want: jwt.ErrIssuedInTheFuture},
+		"expired token":        {input: generateJWT(expiredClaim, privateKey, t), want: jwt.ErrExpired},
 	}
 
 	for name, tc := range tests {
@@ -117,15 +116,11 @@ func TestAuthenticator_Validate(t *testing.T) {
 				t.Error(err)
 			}
 
-			got, err := authenticator.Validate(claims)
-			if got != tc.want {
-				t.Fatalf("wanted: %t, got: %t", tc.want, got)
-			}
-
-			if tc.expectedErr != nil && !errors.As(err, &tc.expectedErr) {
-				t.Fatalf("expectedErr: %s, err: %s", tc.expectedErr, err)
-			} else if tc.expectedErr == nil && err != nil {
-				t.Fatalf("expectedErr: nil, err: %s", err)
+			got := authenticator.Validate(claims)
+			if tc.want != nil && !errors.As(got, &tc.want) {
+				t.Fatalf("wanted: %s, got: %s", tc.want, err)
+			} else if tc.want == nil && got != nil {
+				t.Fatalf("wanted: nil, got: %s", err)
 			}
 		})
 	}

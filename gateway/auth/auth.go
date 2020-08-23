@@ -97,7 +97,7 @@ func (a *Authenticator) Parse(token string) (*jwt.Claims, error) {
 	return claims, err
 }
 
-func (a *Authenticator) Validate(claims *jwt.Claims) (bool, error) {
+func (a *Authenticator) Validate(claims *jwt.Claims) error {
 	expected := jwt.Expected{
 		Issuer:  fmt.Sprintf(secureTokenEndpoint, a.ProjectID),
 		Subject: a.ProjectID,
@@ -107,10 +107,5 @@ func (a *Authenticator) Validate(claims *jwt.Claims) (bool, error) {
 		Time: time.Now(),
 	}
 
-	err := claims.Validate(expected)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
+	return claims.Validate(expected)
 }
