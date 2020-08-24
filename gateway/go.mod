@@ -8,4 +8,5 @@ require (
 	github.com/square/go-jose v2.5.1+incompatible
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1
+	k8s.io/client-go v0.18.6 // indirect
 )
