@@ -1,66 +1,62 @@
 package environment
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/chi"
+	"gopkg.in/square/go-jose.v2/jwt"
 )
 
-type AuthValidator interface {
-	Validate(token string) (bool, error)
+type TokenAuthorizer interface {
+	Parse(token string) (*jwt.Claims, error)
+	Validate(claims *jwt.Claims) error
 }
 
-func Routes(v AuthValidator) *chi.Mux {
+func Routes(auth TokenAuthorizer, publisher Publisher) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Use(RequiresLogin(v))
+	r.Use(RequiresAuthorization(auth))
+	r.Method("POST", "/", EnvironmentHandler{
+		publisher: publisher,
+	})
 
 	//Any route that the user is not authorized to see should 404
 
 	// GET allows the user to get the status of an environment from the id
 	// only allowing them to see environments that they are authed to see.
 	//r.Get()
-	// PUT allows the user to create an environment.
-	//r.Put()
 
 	// DELETE allows the user to request an environment be deleted. Must be authed.
 	//r.Delete()
 
-	r.Route("/{env_id}", func(r chi.Router) {
-		r.Use(RequiresAuth)
-	})
-
 	return r
 }
 
-// Requires that the user is logged into the website to perform the following actions.
+// Requires that the user is authed to perform the following actions.
 // Does not perform any permission checking for the action.
-// Returns a 404 if the user is not logged in.
-func RequiresLogin(v AuthValidator) func(http.Handler) http.Handler {
+// Returns a 404 if the user is not authorized to perform the action.
+func RequiresAuthorization(auth TokenAuthorizer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			bearer := r.Header.Get("Authorization")
-			token := strings.TrimLeft(bearer, "Bearer")
-			valid, err := v.Validate(token)
+			token := strings.TrimLeft(bearer, "Bearer ")
+
+			claims, err := auth.Parse(token)
 			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+			err = auth.Validate(claims)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				return
 			}
 
-			if !valid {
-				http.NotFound(w, r)
-				return
-			}
+			ctx := context.WithValue(r.Context(), "ID", claims.ID)
 
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
-}
-
-// Requires that the client making the request is authorized to make a request for the environment.
-// If they are not authorized then a 404 is returned.
-// NYI - Will pass through.
-func RequiresAuth(next http.Handler) http.Handler {
-	return next
 }

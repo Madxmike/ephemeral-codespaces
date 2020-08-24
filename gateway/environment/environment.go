@@ -7,7 +7,7 @@ import "time"
 // actual k8s resource by an operator.
 type Environment struct {
 	// The id corresponding to the environment that will be created.
-	ID string `json:"id"`
+	ID string `json:"id, omitempty"`
 
 	// The user that is requesting the environment be created.
 	Owner string `json:"owner"`
