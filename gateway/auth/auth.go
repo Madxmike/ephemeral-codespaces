@@ -3,9 +3,9 @@ package auth
 import (
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -38,24 +38,32 @@ func (a *Authenticator) RetrievePublicKeys() error {
 
 	defer resp.Body.Close()
 
-	certData, err := ioutil.ReadAll(resp.Body)
+	certs := make(map[string]string)
+	err = json.NewDecoder(resp.Body).Decode(&certs)
 	if err != nil {
 		return errors.Wrap(err, "could not read cert data body")
 	}
 
-	err = a.parseCerts(certData)
-	if err != nil {
-		return errors.Wrap(err, "could not parse certs")
+	for _, cert := range certs {
+		err = a.parseCerts([]byte(cert))
+		if err != nil {
+			return errors.Wrap(err, "could not parse certs")
+		}
 	}
 
 	return nil
 }
 
 func (a *Authenticator) parseCerts(data []byte) error {
-	a.publicKeys = make([]*rsa.PublicKey, 0)
+	if a.publicKeys == nil {
+		a.publicKeys = make([]*rsa.PublicKey, 0)
+	}
 	var block *pem.Block
 	for len(data) != 0 {
 		block, data = pem.Decode(data)
+		if block == nil {
+			return errors.New("no pem block was found")
+		}
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
 			return err

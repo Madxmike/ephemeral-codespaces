@@ -14,24 +14,22 @@ type TokenAuthorizer interface {
 	Validate(claims *jwt.Claims) error
 }
 
-func Routes(auth TokenAuthorizer, publisher Publisher) *chi.Mux {
-	r := chi.NewRouter()
+func Routes(auth TokenAuthorizer, publisher Publisher) func(r chi.Router) {
+	return func(r chi.Router) {
+		r.Use(RequiresAuthorization(auth))
+		r.Method("POST", "/", EnvironmentHandler{
+			publisher: publisher,
+		})
 
-	r.Use(RequiresAuthorization(auth))
-	r.Method("POST", "/", EnvironmentHandler{
-		publisher: publisher,
-	})
+		//Any route that the user is not authorized to see should 404
 
-	//Any route that the user is not authorized to see should 404
+		// GET allows the user to get the status of an environment from the id
+		// only allowing them to see environments that they are authed to see.
+		//r.Get()
 
-	// GET allows the user to get the status of an environment from the id
-	// only allowing them to see environments that they are authed to see.
-	//r.Get()
-
-	// DELETE allows the user to request an environment be deleted. Must be authed.
-	//r.Delete()
-
-	return r
+		// DELETE allows the user to request an environment be deleted. Must be authed.
+		//r.Delete()
+	}
 }
 
 // Requires that the user is authed to perform the following actions.
