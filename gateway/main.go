@@ -18,14 +18,19 @@ import (
 )
 
 var (
-	Port         = flag.String("port", "8080", "the port to serve on")
-	RedisAddress = flag.String("redis", "", "the address of redis")
+	Port              = flag.String("port", "8080", "the port to serve on")
+	RedisAddress      = flag.String("redis", "", "the address of redis")
+	FirebaseProjectID = flag.String("firebase", "", "the firebase project id")
 )
 
 func main() {
 	flag.Parse()
 	if *RedisAddress == "" {
 		log.Fatal("redis address not provided")
+	}
+
+	if *FirebaseProjectID == "" {
+		log.Fatal("firebase project id not provided")
 	}
 
 	redisConn, err := redigo.Dial("tcp", *RedisAddress)
@@ -37,7 +42,7 @@ func main() {
 	}
 
 	authenticator := auth.Authenticator{
-		ProjectID: "test",
+		ProjectID: *FirebaseProjectID,
 	}
 	authenticator.RetrievePublicKeys()
 
