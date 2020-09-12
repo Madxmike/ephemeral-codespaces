@@ -3,7 +3,17 @@ apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: {{ .Release.Name }}-{{ .Values.ID }}-ingress
+  annotations:
+    # use the shared ingress-nginx
+    kubernetes.io/ingress.class: "nginx"
+    nginx.org/websocket-services: "{{ .Release.Name }}-{{ .Values.ID }}-service"
 spec:
-  backend:
-    serviceName: {{ .Release.Name }}-{{ .Values.ID }}-service
-    servicePort: 8443
+  rules:
+  - host: "michaelepps.me"
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          serviceName: {{ .Release.Name }}-{{ .Values.ID }}-service
+          servicePort: "code-server"

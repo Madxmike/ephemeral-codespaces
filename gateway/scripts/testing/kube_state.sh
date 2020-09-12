@@ -1,0 +1,1 @@
+kubectl get pods,svc,endpoints,ingress -o wide
