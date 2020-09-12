@@ -35,6 +35,7 @@ func (s *Scheduler) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			s.update.Stop()
 			return
 		case <-s.update.C:
 			for _, d := range s.readyDeployments() {
@@ -53,7 +54,6 @@ func (s *Scheduler) readyDeployments() []Deployment {
 	var err error
 	var next Deployment
 	for err != nil {
-		// Check
 		next, err = s.queue.Peek()
 		if err != nil && next.Ready(s.leadTime) {
 			ready = append(ready, next)

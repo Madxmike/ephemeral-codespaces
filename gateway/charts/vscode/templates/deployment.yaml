@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.ID }}
+  labels:
+    app.kubernetes.io/name: {{ .Release.Name }}-{{ .Values.ID }}
+    app.kubernetes.io/instance: {{ .Release.Name }}-{{ .Values.ID }}
+    app.kubernetes.io/version: "0.0.1"
+    app.kubernetes.io/managed-by: helm
+spec:
+  replicas: 1
+  serviceName: {{ .Release.Name }}-{{ .Values.ID }}-service
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}-{{ .Values.ID }}
+  template:
+    metadata:
+      name: {{ .Release.Name }}-{{ .Values.ID }}
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}-{{ .Values.ID }}
+    spec:
+      containers:
+        - name: code-server
+          image: linuxserver/code-server:latest
+          ports:
+            - containerPort: 8443
+          volumeMounts:
+          - name: {{ .Release.Name }}-{{ .Values.ID }}-volume
+            mountPath: /{{ .Release.Name }}-{{ .Values.ID }}
+      volumes:
+      - name: {{ .Release.Name }}-{{ .Values.ID }}-volume
+        emptyDir: {}

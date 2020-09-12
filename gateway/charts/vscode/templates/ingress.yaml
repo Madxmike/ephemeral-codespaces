@@ -1,0 +1,9 @@
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.ID }}-ingress
+spec:
+  backend:
+    serviceName: {{ .Release.Name }}-{{ .Values.ID }}-service
+    servicePort: 8443
