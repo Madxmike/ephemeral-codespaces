@@ -2,16 +2,17 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: {{ .Release.Name }}-{{ .Values.ID }}-ingress
+  name: {{ include "instance.name" . }}-ingress
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   rules:
-  - host: "env.michaelepps.me"
+  - host: {{ .Values.ingress.host }}
     http:
       paths:
-      - path: /{{ .Release.Name }}-{{ .Values.ID }}/(.*)
+      - path: /{{ include "instance.name" . }}/(.*)
         backend:
-          serviceName: {{ .Release.Name }}-{{ .Values.ID }}-service
-          servicePort: "code-server"
+          serviceName: {{ include "instance.name" . }}-service
+          servicePort: {{ .Values.container.port }}
+      
