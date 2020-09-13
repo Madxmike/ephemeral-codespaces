@@ -1,1 +1,18 @@
+instance: test
+version: 0.0.1
 ID: test
+
+container: 
+    name: code-server
+    image: linuxserver/code-server:latest
+    port: 8443
+    mount:
+        name: data
+        basePath: /
+    volumes: 
+    -   name: data
+        emptyDir: {}
+
+ingress:
+    host: env.michaelepps.me
+
