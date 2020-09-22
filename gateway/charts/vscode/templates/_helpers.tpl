@@ -4,5 +4,17 @@
 
 
 {{- define "mount.path" -}}
-    {{- printf "%s/mount" .Values.container.mount.basePath | clean -}}
+    {{- printf "%s/code-server" .Values.container.mount.basePath | clean -}}
 {{- end -}}
+
+
+{{- define "args" }}
+    {{- $args := "code-server --extensions-dir ~/extensions" }}
+    {{- if .Values.extensions }}
+        {{- range .Values.extensions }}
+            {{- $args = (printf "%s code-server --install-extension %s" $args .)}}
+        {{- end }}
+    {{- end}}
+    {{- $args = (printf "%s; /init" $args)}}
+    {{- $args -}}
+{{- end }}

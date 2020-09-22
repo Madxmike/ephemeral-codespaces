@@ -27,5 +27,8 @@ spec:
           volumeMounts:
           - name: {{ .Values.container.mount.name }}
             mountPath: {{ include "mount.path" . }}
+          command: ["/bin/sh"]
+          args: ["-c", {{ include "args" . | quote}} ]
+
       volumes:
       {{- toYaml .Values.container.volumes | nindent 6}}

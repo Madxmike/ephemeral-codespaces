@@ -2,17 +2,21 @@ instance: test
 version: 0.0.1
 ID: test
 
-container: 
-    name: code-server
-    image: linuxserver/code-server:latest
-    port: 8443
-    mount:
-        name: data
-        basePath: /
-    volumes: 
-    -   name: data
-        emptyDir: {}
+container:
+  name: code-server
+  image: linuxserver/code-server:latest
+  port: 8443
+  mount:
+    name: data
+    basePath: /usr/share/
+  volumes:
+    - name: data
+      emptyDir: {}
 
 ingress:
-    host: env.michaelepps.me
+  host: env.michaelepps.me
 
+extensions:
+  - vscode-icons-team.vscode-icons
+  - glen-84.sass-lint
+  - aki77.haml-lint
