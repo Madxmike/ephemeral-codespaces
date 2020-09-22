@@ -15,6 +15,16 @@
             {{- $args = (printf "%s code-server --install-extension %s" $args .)}}
         {{- end }}
     {{- end}}
+
+    {{- $args = (printf "%s;" $args)}}
+
+    {{- if .Values.runtimes }}
+        {{- $files := .Files }}
+        {{- range .Values.runtimes }}
+            {{- $runtimeScript := $files.Get (printf "%s-%s.sh" .name .version) }}
+            {{- $args = (printf " %s %s" $args $runtimeScript) }}
+        {{- end }}
+    {{- end }}
     {{- $args = (printf "%s; /init" $args)}}
     {{- $args -}}
 {{- end }}

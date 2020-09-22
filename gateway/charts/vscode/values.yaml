@@ -17,6 +17,8 @@ ingress:
   host: env.michaelepps.me
 
 extensions:
-  - vscode-icons-team.vscode-icons
-  - glen-84.sass-lint
-  - aki77.haml-lint
+  - golang.go
+
+runtimes:
+  - name: go
+    version: "1.15"

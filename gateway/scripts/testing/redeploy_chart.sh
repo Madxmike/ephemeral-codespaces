@@ -7,5 +7,5 @@ helm delete vscode
 # helm install nginx-ingress nginx-stable/nginx-ingress
 
 echo "Installing chart"
-helm install vscode ../.././charts/vscode
+helm install vscode ../.././charts/vscode --debug
 
