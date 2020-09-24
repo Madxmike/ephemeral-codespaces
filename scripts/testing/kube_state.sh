@@ -1,1 +1,1 @@
-kubectl get pods,svc,endpoints,ingress -o wide
+kubectl get pods,svc,endpoints,ingress -o wide | grep vscode

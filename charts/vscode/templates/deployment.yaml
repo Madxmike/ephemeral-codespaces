@@ -5,19 +5,19 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     app.kubernetes.io/name: {{ .Release.Name }}
-    app.kubernetes.io/instance: {{ include "instance.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}-instance
     app.kubernetes.io/version: "0.0.1"
     app.kubernetes.io/managed-by: helm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: {{ include "instance.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}-instance
   template:
     metadata:
       name: {{ .Release.Name }}
       labels:
-        app.kubernetes.io/instance: {{ include "instance.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}-instance
     spec:
       containers:
         - name: {{ .Values.container.name }}
@@ -28,7 +28,11 @@ spec:
           - name: {{ .Values.container.mount.name }}
             mountPath: {{ include "mount.path" . }}
           command: ["/bin/sh"]
-          args: ["-c", {{ include "args" . | quote}} ]
+          args: [-c, 
+            {{- include "args.runtimes" .}}
+            {{- include "args.extensions" . }}
+            code-server --bind-addr 0.0.0.0:{{ .Values.container.port }} --auth none;
+          ]
 
       volumes:
       {{- toYaml .Values.container.volumes | nindent 6}}

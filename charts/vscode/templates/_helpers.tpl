@@ -8,23 +8,21 @@
 {{- end -}}
 
 
-{{- define "args" }}
-    {{- $args := "code-server --extensions-dir ~/extensions" }}
+{{- define "args.extensions" }}
     {{- if .Values.extensions }}
         {{- range .Values.extensions }}
-            {{- $args = (printf "%s code-server --install-extension %s" $args .)}}
+            {{- printf " code-server --install-extension %s" . }};
         {{- end }}
     {{- end}}
+{{- end }}
 
-    {{- $args = (printf "%s;" $args)}}
-
+{{- define "args.runtimes" }}
     {{- if .Values.runtimes }}
         {{- $files := .Files }}
         {{- range .Values.runtimes }}
-            {{- $runtimeScript := $files.Get (printf "/runtimes/%s-%s.sh" .name .version) }}
-            {{- $args = (printf " %s %s" $args $runtimeScript) }}
+            {{- range $files.Lines (printf "%s-%s.sh" .name .version) }}
+                {{- printf " %s;" .}}
+            {{- end}}
         {{- end }}
-    {{- end }}
-    {{- $args = (printf "%s; /init" $args)}}
-    {{- $args -}}
+    {{- end}}
 {{- end }}

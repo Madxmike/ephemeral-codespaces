@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-    name: {{ include "instance.name" . }}-service
+    name: {{ .Release.Name }}-service
     labels: 
-        app.kubernetes.io/name: {{ include "instance.name" . }}-service
+        app.kubernetes.io/name: {{ .Release.Name }}-service
         app.kubernetes.io/managed-by: helm
 spec:
     selector:
-        app.kubernetes.io/instance: {{ include "instance.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}-instance
     ports: 
     - port: {{ .Values.container.port }}
       protocol: TCP

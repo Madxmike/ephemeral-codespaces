@@ -1,6 +1,4 @@
-instance: test
 version: 0.0.1
-ID: test
 
 container:
   name: code-server
