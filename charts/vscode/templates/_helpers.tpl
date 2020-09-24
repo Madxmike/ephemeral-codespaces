@@ -21,7 +21,7 @@
     {{- if .Values.runtimes }}
         {{- $files := .Files }}
         {{- range .Values.runtimes }}
-            {{- $runtimeScript := $files.Get (printf "%s-%s.sh" .name .version) }}
+            {{- $runtimeScript := $files.Get (printf "/runtimes/%s-%s.sh" .name .version) }}
             {{- $args = (printf " %s %s" $args $runtimeScript) }}
         {{- end }}
     {{- end }}
